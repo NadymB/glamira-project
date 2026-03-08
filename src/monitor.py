@@ -1,6 +1,6 @@
 import redis
 import time
-from config import *
+from src.config import *
 
 r = redis.Redis(host=REDIS_HOST)
 

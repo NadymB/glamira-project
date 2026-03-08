@@ -5,7 +5,7 @@ import argparse
 
 from google.cloud import storage
 from json import JSONDecoder
-from config import *
+from src.config import *
 
 # Redis
 r = redis.Redis(host=REDIS_HOST)

@@ -1,7 +1,7 @@
 import aiohttp
 import asyncio
 from lxml import html
-from config import *
+from src.config import *
 
 sem = asyncio.Semaphore(CONCURRENCY)
 
