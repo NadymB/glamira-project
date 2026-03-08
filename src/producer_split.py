@@ -1,7 +1,8 @@
 import json
 import os
 import redis
-import ijson
+import argparse
+from json import JSONDecoder
 from config import *
 
 r = redis.Redis(host=REDIS_HOST)
@@ -22,25 +23,39 @@ def save_chunk(chunk, index):
     print("queued", filename)
 
 
-def stream_split(input_file):
+def stream_split(input_file, chunk_size):
 
-    with open(input_file, "rb") as f:
+    decoder = JSONDecoder()
 
-        parser = ijson.items(f, "item")
+    with open(input_file, "r") as f:
 
+        buffer = ""
         chunk = []
         index = 0
 
-        for item in parser:
+        for line in f:
 
-            chunk.append(item)
+            buffer += line.strip()
 
-            if len(chunk) >= CHUNK_SIZE:
+            while buffer:
 
-                save_chunk(chunk, index)
+                try:
 
-                chunk = []
-                index += 1
+                    obj, idx = decoder.raw_decode(buffer)
+
+                    chunk.append(obj)
+
+                    buffer = buffer[idx:].strip()
+
+                    if len(chunk) >= chunk_size:
+
+                        save_chunk(chunk, index)
+
+                        chunk = []
+                        index += 1
+
+                except json.JSONDecodeError:
+                    break
 
         if chunk:
             save_chunk(chunk, index)
@@ -48,4 +63,11 @@ def stream_split(input_file):
 
 if __name__ == "__main__":
 
-    stream_split("all_products.json")
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--input", required=True)
+    parser.add_argument("--chunk-size", type=int, default=10000)
+
+    args = parser.parse_args()
+
+    stream_split(args.input, args.chunk_size)
