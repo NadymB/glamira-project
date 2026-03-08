@@ -18,7 +18,7 @@ mkdir -p "$RESULT_DIR"
 
 echo "STEP 1: Streaming split..."
 
-python3 -m src.stream_split \
+poetry run python3 -m src.stream_split \
   --input "$INPUT" \
   --chunk-size "$CHUNK_SIZE" \
   --output-dir "$CHUNK_DIR"
@@ -29,7 +29,7 @@ for file in $CHUNK_DIR/*.json
 do
     echo "Processing $file"
 
-    python3 -m src.worker "$file" \
+    poetry run python3 -m src.worker "$file" \
         > "$RESULT_DIR/$(basename $file .json).csv"
 done
 
