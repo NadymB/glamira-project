@@ -2,25 +2,40 @@ import json
 import os
 import redis
 import argparse
+
+from google.cloud import storage
 from json import JSONDecoder
 from config import *
 
+# Redis
 r = redis.Redis(host=REDIS_HOST)
 
-os.makedirs("chunks", exist_ok=True)
+# GCS
+storage_client = storage.Client()
+bucket = storage_client.bucket("glamira-data-lake")
+
+PREFIX = "bronze/crawler-data"
+
+os.makedirs("/tmp/chunks", exist_ok=True)
 
 
 def save_chunk(chunk, index):
 
     filename = f"chunk_{index}.json"
-    path = f"chunks/{filename}"
 
-    with open(path, "w") as f:
+    local_path = f"/tmp/chunks/{filename}"
+
+    with open(local_path, "w") as f:
         json.dump(chunk, f)
 
+    # upload to GCS
+    blob = bucket.blob(f"{PREFIX}/chunks/{filename}")
+    blob.upload_from_filename(local_path)
+
+    # push job vào redis queue
     r.lpush(QUEUE_NAME, filename)
 
-    print("queued", filename)
+    print("uploaded and queued:", filename)
 
 
 def stream_split(input_file, chunk_size):
