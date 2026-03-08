@@ -1,33 +1,40 @@
 #!/bin/bash
 set -e
 
-INPUT=${1:-data/products.json}
-WORKERS=${2:-8}
-PREFIX=${3:-products_part}
-OUTPUT=${4:-product_names.csv}
+INPUT=${1:-data/raw/all_products.json}
+CHUNK_SIZE=${2:-10000}
+CHUNK_DIR=${3:-chunks}
+RESULT_DIR=${4:-results}
 
 echo "=================================="
 echo "Input file: $INPUT"
-echo "Workers: $WORKERS"
-echo "Prefix: $PREFIX"
-echo "Output file: $OUTPUT"
+echo "Chunk size: $CHUNK_SIZE"
+echo "Chunk dir: $CHUNK_DIR"
+echo "Result dir: $RESULT_DIR"
 echo "=================================="
 
-echo "Running split products..."
+mkdir -p "$CHUNK_DIR"
+mkdir -p "$RESULT_DIR"
 
-python3 -m src.split_products \
+echo "STEP 1: Streaming split..."
+
+python3 -m src.stream_split \
   --input "$INPUT" \
-  --workers "$WORKERS" \
-  --output "$PREFIX"
+  --chunk-size "$CHUNK_SIZE" \
+  --output-dir "$CHUNK_DIR"
 
-echo "Running crawler..."
+echo "STEP 2: Crawling chunks..."
 
-for file in ${PREFIX}_*.json
+for file in $CHUNK_DIR/*.json
 do
-  echo "Processing $file"
-  python3 -m src.crawl_product_name \
-    --input "$file" \
-    --output "result_${file%.json}.csv"
+    echo "Processing $file"
+
+    python3 -m src.worker "$file" \
+        > "$RESULT_DIR/$(basename $file .json).csv"
 done
+
+echo "STEP 3: Merging results..."
+
+cat $RESULT_DIR/*.csv > $RESULT_DIR/final_results.csv
 
 echo "✅ Pipeline completed"
