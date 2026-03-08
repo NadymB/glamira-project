@@ -1,0 +1,19 @@
+# Variable environment
+.venv/
+
+# macOS
+.DS_Store
+
+# IDE
+.idea/
+.vscode/
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Env
+.env*
+
+# Data
+data/
