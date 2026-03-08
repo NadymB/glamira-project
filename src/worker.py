@@ -1,19 +1,28 @@
-import os
+import redis
 import json
 import asyncio
-from src.async_crawler import crawl
+import os
+
+from async_crawler import crawl
+from config import *
+
+r = redis.Redis(host=REDIS_HOST)
+
+os.makedirs("results", exist_ok=True)
 
 
-def process_chunk(file):
+async def process_chunk(file):
 
-    with open(file) as f:
+    path = f"chunks/{file}"
+
+    with open(path) as f:
         data = json.load(f)
 
     urls = [x["current_url"] for x in data]
 
-    results = asyncio.run(crawl(urls))
+    results = await crawl(urls)
 
-    out = file.replace(".json", ".csv")
+    out = f"results/{file}.csv"
 
     with open(out, "w") as f:
 
@@ -21,10 +30,31 @@ def process_chunk(file):
             f.write(f"{r['url']},{r['product_name']}\n")
 
 
+async def worker():
+
+    while True:
+
+        file = r.rpop(QUEUE_NAME)
+
+        if not file:
+            print("queue empty")
+            break
+
+        file = file.decode()
+
+        print("processing", file)
+
+        try:
+
+            await process_chunk(file)
+
+        except Exception as e:
+
+            print("failed", file)
+
+            r.lpush(FAILED_QUEUE, file)
+
+
 if __name__ == "__main__":
 
-    for file in os.listdir("chunks"):
-
-        if file.endswith(".json"):
-
-            process_chunk("chunks/" + file)
+    asyncio.run(worker())

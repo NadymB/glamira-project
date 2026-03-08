@@ -1,38 +1,69 @@
 import aiohttp
 import asyncio
-import json
 from lxml import html
+from config import *
 
-CONCURRENCY = 500
+sem = asyncio.Semaphore(CONCURRENCY)
 
 
 async def fetch(session, url):
 
-    try:
+    for attempt in range(MAX_RETRIES):
 
-        async with session.get(url, timeout=20) as r:
+        try:
 
-            text = await r.text()
+            async with sem:
 
-            tree = html.fromstring(text)
+                async with session.get(url, timeout=REQUEST_TIMEOUT) as r:
 
-            name = tree.xpath('//*[@data-ui-id="page-title-wrapper"]/text()')
+                    if r.status != 200:
+                        raise Exception(f"status {r.status}")
 
-            return {
-                "url": url,
-                "product_name": name[0] if name else None
-            }
+                    text = await r.text()
 
-    except:
-        return {"url": url, "product_name": None}
+                    tree = html.fromstring(text)
+
+                    name = tree.xpath(
+                        '//*[@data-ui-id="page-title-wrapper"]/text()'
+                    )
+
+                    return {
+                        "url": url,
+                        "product_name": name[0] if name else None
+                    }
+
+        except Exception:
+
+            if attempt < MAX_RETRIES - 1:
+
+                wait = 2 ** attempt
+                await asyncio.sleep(wait)
+
+            else:
+
+                return {
+                    "url": url,
+                    "product_name": None
+                }
 
 
 async def crawl(urls):
 
-    connector = aiohttp.TCPConnector(limit=CONCURRENCY)
+    connector = aiohttp.TCPConnector(
+        limit=CONCURRENCY,
+        ttl_dns_cache=300,
+        enable_cleanup_closed=True
+    )
 
-    async with aiohttp.ClientSession(connector=connector) as session:
+    timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
+
+    async with aiohttp.ClientSession(
+        connector=connector,
+        timeout=timeout
+    ) as session:
 
         tasks = [fetch(session, u) for u in urls]
 
-        return await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks)
+
+        return results

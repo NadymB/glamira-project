@@ -1,0 +1,11 @@
+REDIS_HOST = "localhost"
+REDIS_PORT = 6379
+
+CHUNK_SIZE = 10000
+
+CONCURRENCY = 500
+REQUEST_TIMEOUT = 20
+
+MAX_RETRIES = 3
+QUEUE_NAME = "crawl_queue"
+FAILED_QUEUE = "crawl_failed"
