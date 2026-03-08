@@ -1,73 +1,59 @@
-import json
-import os
 import redis
-import argparse
-from json import JSONDecoder
+import json
+import asyncio
+import os
+
+from async_crawler import crawl
 from config import *
 
 r = redis.Redis(host=REDIS_HOST)
 
-os.makedirs("chunks", exist_ok=True)
+os.makedirs("results", exist_ok=True)
 
 
-def save_chunk(chunk, index):
+async def process_chunk(file):
 
-    filename = f"chunk_{index}.json"
-    path = f"chunks/{filename}"
+    path = f"chunks/{file}"
 
-    with open(path, "w") as f:
-        json.dump(chunk, f)
+    with open(path) as f:
+        data = json.load(f)
 
-    r.lpush(QUEUE_NAME, filename)
+    urls = [x["current_url"] for x in data]
 
-    print("queued", filename)
+    results = await crawl(urls)
+
+    out = f"results/{file}.csv"
+
+    with open(out, "w") as f:
+
+        for r_ in results:
+            f.write(f"{r_['url']},{r_['product_name']}\n")
+
+    r.lrem("processing_queue", 1, file)
 
 
-def stream_split(input_file, chunk_size):
+async def worker():
 
-    decoder = JSONDecoder()
+    while True:
 
-    with open(input_file, "r") as f:
+        file = r.brpoplpush(QUEUE_NAME, "processing_queue")
 
-        buffer = ""
-        chunk = []
-        index = 0
+        file = file.decode()
 
-        for line in f:
+        print("processing", file)
 
-            buffer += line.strip()
+        try:
 
-            while buffer:
+            await process_chunk(file)
 
-                try:
+        except Exception as e:
 
-                    obj, idx = decoder.raw_decode(buffer)
+            print("failed", file)
 
-                    chunk.append(obj)
-
-                    buffer = buffer[idx:].strip()
-
-                    if len(chunk) >= chunk_size:
-
-                        save_chunk(chunk, index)
-
-                        chunk = []
-                        index += 1
-
-                except json.JSONDecodeError:
-                    break
-
-        if chunk:
-            save_chunk(chunk, index)
+            r.lrem("processing_queue", 1, file)
+            r.lpush(FAILED_QUEUE, file)
 
 
 if __name__ == "__main__":
 
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--input", required=True)
-    parser.add_argument("--chunk-size", type=int, default=10000)
-
-    args = parser.parse_args()
-
-    stream_split(args.input, args.chunk_size)
+    asyncio.run(worker())
