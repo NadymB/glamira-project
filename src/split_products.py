@@ -33,7 +33,8 @@ if __name__ == "__main__":
 
     parser.add_argument("--input", required=True)
     parser.add_argument("--workers", type=int, default=4)
+    parser.add_argument("--output", default="products_part")
 
     args = parser.parse_args()
 
-    split_products(args.input, args.workers)
+    split_products(args.input, args.workers, args.output)
