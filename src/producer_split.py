@@ -2,10 +2,11 @@ import json
 import os
 import redis
 import argparse
+import sys
 
 from google.cloud import storage
 from json import JSONDecoder
-from src.config import *
+from config import *
 
 # Redis
 r = redis.Redis(host=REDIS_HOST)
@@ -42,38 +43,36 @@ def stream_split(input_file, chunk_size):
 
     decoder = JSONDecoder()
 
-    with open(input_file, "r") as f:
+    buffer = ""
+    chunk = []
+    index = 0
 
-        buffer = ""
-        chunk = []
-        index = 0
+    for line in input_file:
 
-        for line in f:
+        buffer += line.strip()
 
-            buffer += line.strip()
+        while buffer:
 
-            while buffer:
+            try:
 
-                try:
+                obj, idx = decoder.raw_decode(buffer)
 
-                    obj, idx = decoder.raw_decode(buffer)
+                chunk.append(obj)
 
-                    chunk.append(obj)
+                buffer = buffer[idx:].strip()
 
-                    buffer = buffer[idx:].strip()
+                if len(chunk) >= chunk_size:
 
-                    if len(chunk) >= chunk_size:
+                    save_chunk(chunk, index)
 
-                        save_chunk(chunk, index)
+                    chunk = []
+                    index += 1
 
-                        chunk = []
-                        index += 1
+            except json.JSONDecodeError:
+                break
 
-                except json.JSONDecodeError:
-                    break
-
-        if chunk:
-            save_chunk(chunk, index)
+    if chunk:
+        save_chunk(chunk, index)
 
 
 if __name__ == "__main__":
@@ -85,4 +84,10 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
-    stream_split(args.input, args.chunk_size)
+    # read from STDIN
+    if args.input == "-":
+        stream_split(sys.stdin, args.chunk_size)
+
+    else:
+        with open(args.input, "r") as f:
+            stream_split(f, args.chunk_size)

@@ -6,7 +6,7 @@ import socket
 
 from google.cloud import storage
 from async_crawler import crawl
-from src.config import *
+from config import *
 
 # Redis
 r = redis.Redis(host=REDIS_HOST)
