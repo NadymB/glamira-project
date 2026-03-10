@@ -1,7 +1,8 @@
 import aiohttp
 import asyncio
+import random 
 from lxml import html
-from src.config import *
+from config import *
 
 sem = asyncio.Semaphore(CONCURRENCY)
 
@@ -13,9 +14,24 @@ async def fetch(session, url):
         try:
 
             async with sem:
+                # random delay trước khi request
+                await asyncio.sleep(random.uniform(0.2, 0.6))
 
                 async with session.get(url, timeout=REQUEST_TIMEOUT) as r:
+                    if r.status in [403, 429]:
 
+                        print(f"[WARN] {url} blocked with status {r.status} (attempt {attempt+1})")
+
+                        if attempt < MAX_RETRIES - 1:
+                            wait = 2 ** attempt
+                            await asyncio.sleep(wait)
+                            continue
+                        else:
+                            return {
+                                "url": url,
+                                "product_name": None
+                            }
+                        
                     if r.status != 200:
                         raise Exception(f"status {r.status}")
 
@@ -57,13 +73,34 @@ async def crawl(urls):
 
     timeout = aiohttp.ClientTimeout(total=REQUEST_TIMEOUT)
 
+    results = []
+
     async with aiohttp.ClientSession(
         connector=connector,
         timeout=timeout
     ) as session:
 
-        tasks = [fetch(session, u) for u in urls]
+        for i in range(0, len(urls), BATCH_SIZE):
 
-        results = await asyncio.gather(*tasks)
+            batch = urls[i:i+BATCH_SIZE]
 
-        return results
+            tasks = [fetch(session, u) for u in batch]
+
+            batch_results = await asyncio.gather(*tasks)
+
+            results.extend(batch_results)
+
+            # delay tránh rate limit
+            await asyncio.sleep(0.5)
+
+    return results
+    
+if __name__ == "__main__":
+
+    urls = [
+        "https://www.glamira.de/glamira-ring-april.html?diamond=diamond-Brillant&itm_source=recommendation&itm_medium=sorting&alloy=white_red-375"
+    ]
+
+    results = asyncio.run(crawl(urls))
+
+    print(results)

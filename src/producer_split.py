@@ -3,6 +3,7 @@ import os
 import redis
 import argparse
 import sys
+import uuid
 
 from google.cloud import storage
 from json import JSONDecoder
@@ -20,9 +21,10 @@ PREFIX = "bronze/crawler-data"
 os.makedirs("/tmp/chunks", exist_ok=True)
 
 
-def save_chunk(chunk, index):
+def save_chunk(chunk):
+    chunk_id = str(uuid.uuid4())
 
-    filename = f"chunk_{index}.json"
+    filename = f"chunk_{chunk_id}.json"
 
     local_path = f"/tmp/chunks/{filename}"
 
@@ -41,38 +43,30 @@ def save_chunk(chunk, index):
 
 def stream_split(input_file, chunk_size):
 
-    decoder = JSONDecoder()
-
-    buffer = ""
     chunk = []
-    index = 0
 
     for line in input_file:
 
-        buffer += line.strip()
+        line = line.strip()
 
-        while buffer:
+        if not line:
+            continue
 
-            try:
+        try:
+            obj = json.loads(line)
+        except:
+            continue
 
-                obj, idx = decoder.raw_decode(buffer)
+        chunk.append(obj)
 
-                chunk.append(obj)
+        if len(chunk) >= chunk_size:
 
-                buffer = buffer[idx:].strip()
+            save_chunk(chunk)
 
-                if len(chunk) >= chunk_size:
-
-                    save_chunk(chunk, index)
-
-                    chunk = []
-                    index += 1
-
-            except json.JSONDecodeError:
-                break
+            chunk = []
 
     if chunk:
-        save_chunk(chunk, index)
+        save_chunk(chunk)
 
 
 if __name__ == "__main__":
