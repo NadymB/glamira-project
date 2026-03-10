@@ -27,8 +27,9 @@ def normalize_url(url):
     try:
         p = urlparse(url)
 
+        path = p.path.rstrip("/")
         # bỏ query params
-        return f"{p.scheme}://{p.netloc}{p.path.rstrip("/")}"
+        return f"{p.scheme}://{p.netloc}{path}"
 
     except:
         return url
