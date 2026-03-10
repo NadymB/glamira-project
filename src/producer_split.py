@@ -8,6 +8,7 @@ import uuid
 from google.cloud import storage
 from json import JSONDecoder
 from config import *
+from urllib.parse import urlparse
 
 # Redis
 r = redis.Redis(host=REDIS_HOST)
@@ -19,6 +20,17 @@ bucket = storage_client.bucket("glamira-data-lake")
 PREFIX = "bronze/crawler-data"
 
 os.makedirs("/tmp/chunks", exist_ok=True)
+
+def normalize_url(url):
+
+    try:
+        p = urlparse(url)
+
+        # bỏ query params
+        return f"{p.scheme}://{p.netloc}{p.path}"
+
+    except:
+        return url
 
 
 def save_chunk(chunk):
@@ -57,17 +69,28 @@ def stream_split(input_file, chunk_size):
         except:
             continue
 
+        url = obj.get("current_url")
+
+        if not url:
+            continue
+
+        url = normalize_url(url)
+
+        # redis deduplicate
+        if r.sadd("seen_urls", url) == 0:
+            continue
+
+        obj["current_url"] = url
+
         chunk.append(obj)
 
         if len(chunk) >= chunk_size:
 
             save_chunk(chunk)
-
             chunk = []
 
     if chunk:
         save_chunk(chunk)
-
 
 if __name__ == "__main__":
 
