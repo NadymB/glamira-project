@@ -23,7 +23,7 @@ export_chunk () {
     mongoexport --db countly --collection summary \
     --query "{ \"time_stamp\": { \"\$gte\":$START, \"\$lt\":$END }, \"collection\": $QUERY }" \
     --fields $FIELDS \
-    | python producer_split.py --input - &
+    | poetry run python src/producer_split.py --input - &
 }
 
 export_chunk 1585699201 1586394200

@@ -4,6 +4,7 @@ import redis
 import argparse
 import sys
 import uuid
+import time
 
 from google.cloud import storage
 from json import JSONDecoder
@@ -27,10 +28,24 @@ def normalize_url(url):
         p = urlparse(url)
 
         # bỏ query params
-        return f"{p.scheme}://{p.netloc}{p.path}"
+        return f"{p.scheme}://{p.netloc}{p.path.rstrip("/")}"
 
     except:
         return url
+    
+def upload_with_verify(blob, local_path, retries=5):
+
+    for attempt in range(retries):
+
+        blob.upload_from_filename(local_path)
+
+        # verify object exist in GCS
+        if blob.exists():
+            return True
+
+        time.sleep(2 ** attempt)
+
+    return False
 
 
 def save_chunk(chunk):
@@ -45,7 +60,11 @@ def save_chunk(chunk):
 
     # upload to GCS
     blob = bucket.blob(f"{PREFIX}/chunks/{filename}")
-    blob.upload_from_filename(local_path)
+    ok = upload_with_verify(blob, local_path)
+
+    if not ok:
+        print("upload failed:", filename)
+        return
 
     # push job vào redis queue
     r.lpush(QUEUE_NAME, filename)

@@ -29,6 +29,20 @@ PREFIX = "bronze/crawler-data"
 os.makedirs("chunks", exist_ok=True)
 os.makedirs("/tmp/results", exist_ok=True)
 
+async def wait_for_chunk(blob, retries=6):
+
+    for attempt in range(retries):
+
+        if blob.exists():
+            return True
+
+        wait = 2 ** attempt
+        print("waiting for chunk...", wait)
+
+        await asyncio.sleep(wait)
+
+    return False
+
 
 async def process_chunk(file):
 
@@ -38,6 +52,16 @@ async def process_chunk(file):
 
     # download chunk từ GCS
     blob = bucket.blob(f"{PREFIX}/chunks/{file}")
+    ok = await wait_for_chunk(blob)
+
+    if not ok:
+        print("chunk never appeared:", file)
+
+        r.lrem(PROCESSING_QUEUE, 1, file)
+        r.lpush(FAILED_QUEUE, file)
+
+        return
+    
     blob.download_to_filename(local_path)
 
     with open(local_path) as f:
