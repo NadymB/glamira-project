@@ -1,6 +1,8 @@
 REDIS_HOST = "localhost"
+REDIS_PORT = 6379
+REDIS_PASSWORD = "your_strong_password"
 
-MONGO_URI = "mongodb://admin:123456@localhost:27017/?authSource=admin"
+MONGO_URI = "mongodb://admin:your_password@localhost:27017/?authSource=admin"
 DB_NAME = "countly"
 COLLECTION_NAME = "summary"
 
