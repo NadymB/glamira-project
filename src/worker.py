@@ -1,118 +1,131 @@
+# worker_fetch.py
+import asyncio
+import aiohttp
 import redis
 import json
-import asyncio
-import os
-import socket
-
-from google.cloud import storage
-from async_crawler import crawl
+import random
+from lxml import html
 from config import *
+import logging
+import time 
+from utils.logger import setup_logger
 
-# Redis
+
 r = redis.Redis(host=REDIS_HOST)
+CHECKPOINT_HASH = "worker_checkpoint"
+PROCESSING_TS = "processing_timestamps"
+PROCESSING_TIMEOUT = 300  # 5 phút
+logger = logger = setup_logger('worker')
 
-# queues
-PROCESSING_QUEUE = "processing_queue"
-FAILED_QUEUE = "failed_queue"
-DONE_QUEUE = "done_queue"
+def recover_stuck_jobs():
+    now = int(time.time())
 
-# worker id
-WORKER_ID = socket.gethostname()
+    all_jobs = r.hgetall(PROCESSING_TS)
 
-# GCS
-storage_client = storage.Client()
-bucket = storage_client.bucket("glamira-data-lake")
+    for job_data, ts in all_jobs.items():
+        ts = int(ts)
+        if now - ts > PROCESSING_TIMEOUT:
+            # job bị kẹt
+            logger.warning(f"Recovering stuck job: {job_data.decode()}")
 
-PREFIX = "bronze/crawler-data"
+            # push lại crawl_queue
+            r.lpush(CRAWL_QUEUE, job_data)
 
-# local folders
-os.makedirs("chunks", exist_ok=True)
-os.makedirs("/tmp/results", exist_ok=True)
+            # xoá khỏi processing_queue
+            r.lrem(PROCESSING_QUEUE, 1, job_data)
 
-async def wait_for_chunk(blob, retries=6):
-
-    for attempt in range(retries):
-
-        if blob.exists():
-            return True
-
-        wait = 2 ** attempt
-        print("waiting for chunk...", wait)
-
-        await asyncio.sleep(wait)
-
-    return False
+            # xoá timestamp
+            r.hdel(PROCESSING_TS, job_data)
 
 
-async def process_chunk(file):
+async def fetch(session, url):
+    """Fetch URL với retry và exponential backoff"""
+    for attempt in range(MAX_RETRIES):
+        try:
+            async with session.get(url, timeout=15) as resp:
+                if resp.status == 404:
+                    logger.info(f"Failed: {url}")
+                    return {"url": url, "product_name": None, "status": "failed"}
+                
+                logger.info(f"Success: {url}")
 
-    print(f"{WORKER_ID} processing {file}")
+                text = await resp.text()
+                
+                tree = html.fromstring(text)
 
-    local_path = f"chunks/{file}"
+                name = tree.xpath(
+                    '//*[@data-ui-id="page-title-wrapper"]/text()'
+                )
 
-    # download chunk từ GCS
-    blob = bucket.blob(f"{PREFIX}/chunks/{file}")
-    ok = await wait_for_chunk(blob)
+                return {
+                    "url": url,
+                    "product_name": name[0] if name else None
+                }
+            
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                logger.error(f"Fetch error {url}: {str(e)}")
+                return {"url": url, "product_name": None, "status": "failed"}
+            if e.status == 403:
+                logger.warning(f"403 retry: {url}")
+                await asyncio.sleep(random.uniform(10, 30))
+            if e.status == 429:
+                logger.warning(f"429 retry: {url}")
+                await asyncio.sleep(random.uniform(10, 30))
+        except Exception as e:
+            # exponential backoff
+            logger.warning(f"sleep: {2 ** attempt}s ")
+            await asyncio.sleep(2 ** attempt)
+    return {"url": url, "product_name": None, "status": "failed"}
 
-    if not ok:
-        print("chunk never appeared:", file)
-
-        r.lrem(PROCESSING_QUEUE, 1, file)
-        r.lpush(FAILED_QUEUE, file)
-
+async def process_job(session):
+    data = r.brpoplpush(CRAWL_QUEUE, PROCESSING_QUEUE, timeout=5)
+    if not data:
+        await asyncio.sleep(1)
         return
-    
-    blob.download_to_filename(local_path)
 
-    with open(local_path) as f:
-        data = json.load(f)
+    # save timestamp
+    r.hset(PROCESSING_TS, data, int(time.time()))
 
-    urls = [x["current_url"] for x in data]
+    item = json.loads(data.decode())
+    url = item["url"]
 
-    # crawl async
-    results = await crawl(urls)
+    logger.info(f"Processing: {url}")
 
-    # save local csv
-    out = f"/tmp/results/{file}.csv"
+    result = await fetch(session, url)
 
-    with open(out, "w") as f:
-        for r_ in results:
-            f.write(f"{r_['url']},{r_['product_name']}\n")
+    # push result
+    success = False
+    for attempt in range(MAX_RETRIES):
+        try:
+            r.lpush(RESULT_QUEUE, json.dumps(result))
+            success = True
+            break
+        except redis.exceptions.ConnectionError:
+            await asyncio.sleep(2)
 
-    # upload result lên GCS
-    blob = bucket.blob(f"{PREFIX}/results/{file}.csv")
-    blob.upload_from_filename(out)
-
-    # remove processing
-    r.lrem(PROCESSING_QUEUE, 1, file)
-
-    # mark done
-    r.lpush(DONE_QUEUE, file)
-
-    print(f"{WORKER_ID} done {file}")
-
+    if success:
+        r.hset(CHECKPOINT_HASH, url, json.dumps(result))
+        r.lrem(PROCESSING_QUEUE, 1, data)
+        r.hdel(PROCESSING_TS, data)
 
 async def worker():
+    connector = aiohttp.TCPConnector(limit=CONCURRENT)
+    async with aiohttp.ClientSession(timeout=TIMEOUT, connector=connector) as session:
+        last_recover = time.time()
 
-    while True:
+        while True:
+            # 🔁 recover mỗi 60s
+            if time.time() - last_recover > 60:
+                recover_stuck_jobs()
+                last_recover = time.time()
 
-        file = r.brpoplpush(QUEUE_NAME, PROCESSING_QUEUE)
+            tasks = [
+                process_job(session)
+                for _ in range(CONCURRENT)
+            ]
 
-        file = file.decode()
-
-        try:
-
-            await process_chunk(file)
-
-        except Exception as e:
-
-            print(f"{WORKER_ID} failed {file}", e)
-
-            r.lrem(PROCESSING_QUEUE, 1, file)
-
-            r.lpush(FAILED_QUEUE, file)
-
+            await asyncio.gather(*tasks)
 
 if __name__ == "__main__":
-
     asyncio.run(worker())

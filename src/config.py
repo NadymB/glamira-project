@@ -1,12 +1,16 @@
 REDIS_HOST = "localhost"
-REDIS_PORT = 6379
 
-CHUNK_SIZE = 10000
+MONGO_URI = "mongodb://admin:123456@localhost:27017/?authSource=admin"
+DB_NAME = "countly"
+COLLECTION_NAME = "summary"
 
-CONCURRENCY = 10
-BATCH_SIZE = 20
-REQUEST_TIMEOUT = 20
+CRAWL_QUEUE = "crawl_queue"
+PROCESSING_QUEUE = "processing_queue"
+RESULT_QUEUE = "result_queue"
 
+CONCURRENCY = 3
 MAX_RETRIES = 3
-QUEUE_NAME = "crawl_queue"
-FAILED_QUEUE = "crawl_failed"
+BATCH_SIZE = 50
+
+CONCURRENT=5
+TIMEOUT=10

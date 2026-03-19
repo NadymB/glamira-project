@@ -19,3 +19,7 @@ __pycache__/
 data/
 chunks/
 results/
+logs/
+
+#test
+src/test_worker.py 
