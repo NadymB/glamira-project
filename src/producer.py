@@ -9,7 +9,7 @@ from utils.logger import setup_logger
 # ===== INIT =====
 r = redis.Redis(
     host=REDIS_HOST,
-    post=REDIS_PORT,
+    port=REDIS_PORT,
     password=REDIS_PASSWORD
 )
 client = MongoClient(MONGO_URI)
