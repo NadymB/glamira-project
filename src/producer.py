@@ -50,12 +50,12 @@ def run(producer_id, start_id, end_id):
                 "_id": {"$gte": start_id, "$lt": end_id},
                 "collection": {
                     "$in": [
-                        "view_product_detail",
-                        "select_product_option",
-                        "select_product_option_quality",
-                        "add_to_cart_action",
-                        "product_detail_recommendation_visible",
-                        "product_detail_recommendation_noticed"
+                        "view_product_detail"
+                        # "select_product_option",
+                        # "select_product_option_quality",
+                        # "add_to_cart_action",
+                        # "product_detail_recommendation_visible",
+                        # "product_detail_recommendation_noticed"
                     ]
                 }
             }
