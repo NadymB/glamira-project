@@ -9,7 +9,7 @@ REDIS_PORT = 6379
 REDIS_PASSWORD = "your_strong_password"
 
 MONGO_URI = "mongodb://username:password@localhost:27017/?authSource=admin"
-DB_NAME = "countly"
+DB_NAME = "glamira"
 COLLECTION_NAME = "summary"
 
 CRAWL_QUEUE = "crawl_queue"

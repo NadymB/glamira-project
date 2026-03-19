@@ -11,7 +11,11 @@ import time
 from utils.logger import setup_logger
 
 
-r = redis.Redis(host=REDIS_HOST)
+r = redis.Redis(
+    host=REDIS_HOST,
+    port=REDIS_PORT,
+    password=REDIS_PASSWORD
+)
 CHECKPOINT_HASH = "worker_checkpoint"
 PROCESSING_TS = "processing_timestamps"
 PROCESSING_TIMEOUT = 300  # 5 phút
