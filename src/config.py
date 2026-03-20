@@ -14,7 +14,8 @@ COLLECTION_NAME = "summary"
 
 CRAWL_QUEUE = "crawl_queue"
 PROCESSING_QUEUE = "processing_queue"
-RESULT_QUEUE = "result_queue"
+RESULT_FAILED_QUEUE = "result_failed_queue"
+RESULT_SUCCESS_QUEUE = "result_success_queue"
 
 CONCURRENCY = 3
 MAX_RETRIES = 3

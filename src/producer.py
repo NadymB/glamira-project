@@ -1,3 +1,4 @@
+import time
 from pymongo import MongoClient
 import redis
 import json
@@ -52,14 +53,13 @@ def run(producer_id, start_id, end_id):
         {
             "$match": {
                 "_id": {"$gte": start_id, "$lt": end_id},
-                "collection": {
+                "collection": { 
                     "$in": [
-                        "view_product_detail"
-                        # "select_product_option",
-                        # "select_product_option_quality",
-                        # "add_to_cart_action",
-                        # "product_detail_recommendation_visible",
-                        # "product_detail_recommendation_noticed"
+                        "view_product_detail",
+                        "select_product_option",
+                        "select_product_option_quality",
+                        "product_detail_recommendation_visible",
+                        "product_detail_recommendation_noticed"
                     ]
                 }
             }
@@ -87,16 +87,24 @@ def run(producer_id, start_id, end_id):
             }
         }
     ]
-
+    
+    start_time = time.time()
     cursor = collection.aggregate(pipeline, allowDiskUse=True)
+    logger.info("✅ Aggregation started, waiting for first result...")
 
     batch = []
     count = 0
 
-    for doc in cursor:
+    for i, doc in enumerate(cursor):
+        if i == 0:
+            logger.info(f"🔥 First doc after {time.time() - start_time:.2f}s")
+
+        product_id = str(doc["product_id"])
+        url = doc["url"]
+
         batch.append(json.dumps({
-            "product_id": str(doc["_id"]),
-            "url": doc["url"]
+            "product_id": product_id,
+            "url": url
         }))
 
         if len(batch) >= BATCH_SIZE:

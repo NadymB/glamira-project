@@ -94,11 +94,15 @@ async def process_job(session):
     result = await fetch(session, url)
     result["product_id"] = product_id
 
+    # 🔥 chọn queue theo status
+    is_failed = result.get("status") == "failed"
+    target_queue = RESULT_FAILED_QUEUE if is_failed else RESULT_SUCCESS_QUEUE
+
     # push result
     success = False
     for attempt in range(MAX_RETRIES):
         try:
-            r.lpush(RESULT_QUEUE, json.dumps(result))
+            r.lpush(target_queue, json.dumps(result))
             success = True
             break
         except redis.exceptions.ConnectionError:
