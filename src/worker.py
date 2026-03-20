@@ -9,6 +9,7 @@ from config import *
 import logging
 import time 
 from utils.logger import setup_logger
+from aiohttp import ClientTimeout
 
 
 r = redis.Redis(
@@ -50,6 +51,10 @@ async def fetch(session, url):
                 if resp.status == 404:
                     logger.info(f"Failed: {url}")
                     return {"url": url, "product_name": None, "status": "failed"}
+                if resp.status in (403, 429):
+                    logger.info(f"Blocked: {url}")
+                    await asyncio.sleep(random.uniform(1, 5))
+                    continue
                 
                 logger.info(f"Success: {url}")
 
@@ -66,26 +71,15 @@ async def fetch(session, url):
                     "product_name": name[0] if name else None
                 }
             
-        except aiohttp.ClientResponseError as e:
-            if e.status == 404:
-                logger.error(f"Fetch error {url}: {str(e)}")
-                return {"url": url, "product_name": None, "status": "failed"}
-            if e.status == 403:
-                logger.warning(f"403 retry: {url}")
-                await asyncio.sleep(random.uniform(10, 30))
-            if e.status == 429:
-                logger.warning(f"429 retry: {url}")
-                await asyncio.sleep(random.uniform(10, 30))
         except Exception as e:
             # exponential backoff
-            logger.warning(f"sleep: {2 ** attempt}s ")
+            logger.warning(f"sleep exponential backoff: {2 ** attempt}s ")
             await asyncio.sleep(2 ** attempt)
     return {"url": url, "product_name": None, "status": "failed"}
 
 async def process_job(session):
     data = r.brpoplpush(CRAWL_QUEUE, PROCESSING_QUEUE, timeout=5)
     if not data:
-        await asyncio.sleep(1)
         return
 
     # save timestamp
@@ -93,10 +87,12 @@ async def process_job(session):
 
     item = json.loads(data.decode())
     url = item["url"]
+    product_id = item.get("product_id")
 
     logger.info(f"Processing: {url}")
 
     result = await fetch(session, url)
+    result["product_id"] = product_id
 
     # push result
     success = False
@@ -106,6 +102,7 @@ async def process_job(session):
             success = True
             break
         except redis.exceptions.ConnectionError:
+            logger.warning(f"sleep redis push result: 2s ")
             await asyncio.sleep(2)
 
     if success:
@@ -115,7 +112,8 @@ async def process_job(session):
 
 async def worker():
     connector = aiohttp.TCPConnector(limit=CONCURRENT)
-    async with aiohttp.ClientSession(timeout=TIMEOUT, connector=connector) as session:
+    timeout = ClientTimeout(total=TIMEOUT)
+    async with aiohttp.ClientSession(timeout=timeout, connector=connector) as session:
         last_recover = time.time()
 
         while True:
