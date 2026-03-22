@@ -1,5 +1,5 @@
 import random
-import aiohttp
+import asyncio
 from lxml import html
 from src.utils.config import MAX_RETRIES, USER_AGENTS
 
