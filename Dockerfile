@@ -2,14 +2,13 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-COPY . .
+COPY pyproject.toml poetry.lock ./
 
-# install poetry + export plugin
-RUN pip install poetry && \
-    poetry self add poetry-plugin-export
-
-# export requirements
-RUN poetry config virtualenvs.create false && \
+RUN pip install poetry==1.8.3 && \
     poetry export -f requirements.txt --output requirements.txt --without-hashes
 
-CMD ["python", "src/main.py"]
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY . .
+
+ENV PYTHONPATH=/app

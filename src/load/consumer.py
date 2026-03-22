@@ -1,5 +1,5 @@
 import time
-from config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, SLEEP_EMPTY
+from utils.config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, SLEEP_EMPTY
 from utils.logger import setup_logger
 from utils.redis_client import get_redis
 from recover import recover_on_start
