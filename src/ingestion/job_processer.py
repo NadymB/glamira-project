@@ -2,9 +2,9 @@ import random
 import json
 import time
 import asyncio
-from utils.config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES
-from fetcher import fetch
-from utils.queue_core import brpoplpush, lpush
+from src.utils.config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES
+from src.ingestion.fetcher import fetch
+from src.utils.queue_core import brpoplpush, lpush
 
 async def process_job(session, r, logger):
     data = await brpoplpush(r, CRAWL_QUEUE, PROCESSING_QUEUE)

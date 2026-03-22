@@ -1,5 +1,5 @@
-from utils.redis_client import get_redis
-from utils.config import CHECKPOINT_PREFIX
+from src.utils.redis_client import get_redis
+from src.utils.config import CHECKPOINT_PREFIX
 from bson.objectid import ObjectId
 
 r = get_redis()

@@ -1,10 +1,10 @@
 import time
-from utils.config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, SLEEP_EMPTY
-from utils.logger import setup_logger
-from utils.redis_client import get_redis
-from recover import recover_on_start
-from utils.queue_core import brpoplpush, remove_batch
-from gcs_loader import upload_bacth 
+from src.utils.config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, SLEEP_EMPTY
+from src.utils.logger import setup_logger
+from src.utils.redis_client import get_redis
+from src.load.recover import recover_on_start
+from src.utils.queue_core import brpoplpush, remove_batch
+from src.load.gcs_loader import upload_bacth 
 
 logger = setup_logger("upload_consumer")
 

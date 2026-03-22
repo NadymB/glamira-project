@@ -1,5 +1,5 @@
 import redis
-from utils.config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
+from src.utils.config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 
 def get_redis():
     return redis.Redis(

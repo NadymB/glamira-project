@@ -1,13 +1,13 @@
 import asyncio
 import aiohttp
 import json
-from utils.config import *
+from src.utils.config import *
 import time
-from utils.logger import setup_logger
+from src.utils.logger import setup_logger
 from aiohttp import ClientTimeout
-from job_processer import process_job
-from utils.redis_client import get_redis
-from recover import recover_stuck_jobs
+from src.ingestion.job_processer import process_job
+from src.utils.redis_client import get_redis
+from src.ingestion.recover import recover_stuck_jobs
 
 logger = setup_logger("worker")
 

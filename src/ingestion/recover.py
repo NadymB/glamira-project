@@ -1,5 +1,5 @@
 import time 
-from utils.config import  PROCESSING_QUEUE, PROCESSING_TIMEOUT, PROCESSING_TS, CRAWL_QUEUE
+from src.utils.config import  PROCESSING_QUEUE, PROCESSING_TIMEOUT, PROCESSING_TS, CRAWL_QUEUE
 
 async def recover_stuck_jobs(r, logger):
     now = int(time.time())

@@ -1,6 +1,6 @@
 import json
-from utils.redis_client import get_redis
-from utils.config import CRAWL_QUEUE
+from src.utils.redis_client import get_redis
+from src.utils.config import CRAWL_QUEUE
 
 r = get_redis()
 

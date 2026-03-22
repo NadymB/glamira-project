@@ -1,13 +1,13 @@
 import time
 import json
 from bson.objectid import ObjectId
-from utils.config import *
-from utils.logger import setup_logger
-from utils.mongo_client import get_collection
-from utils.redis_client import get_redis
-from checkpoint import get_checkpoint, save_checkpoint
-from pipeline import build_pipeline
-from redis_loader import push_batch, build_message
+from src.utils.config import *
+from src.utils.logger import setup_logger
+from src.utils.mongo_client import get_collection
+from src.utils.redis_client import get_redis
+from src.extract.checkpoint import get_checkpoint, save_checkpoint
+from src.extract.pipeline import build_pipeline
+from src.extract.redis_loader import push_batch, build_message
 
 logger = setup_logger('producer')
 
