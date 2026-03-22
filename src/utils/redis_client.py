@@ -1,4 +1,4 @@
-import redis
+import redis.asyncio as redis
 from src.utils.config import REDIS_HOST, REDIS_PORT, REDIS_PASSWORD
 
 def get_redis():

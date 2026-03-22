@@ -1,4 +1,4 @@
-from mongo_client import MongoClient
+from pymongo import MongoClient
 from src.utils.config import MONGO_URI, DB_NAME, COLLECTION_NAME
 
 def get_collection():

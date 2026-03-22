@@ -1,7 +1,8 @@
+import asyncio
 from src.load.consumer import run
 
 def main():
-    run()
+    asyncio.run(run())  
 
 if __name__ == "__main__":
     main()
