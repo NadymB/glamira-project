@@ -1,7 +1,7 @@
 import asyncio
 import aiohttp
 import json
-from config import *
+from utils.config import *
 import time
 from utils.logger import setup_logger
 from aiohttp import ClientTimeout

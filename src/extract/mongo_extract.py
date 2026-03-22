@@ -1,7 +1,7 @@
 import time
 import json
 from bson.objectid import ObjectId
-from config import *
+from utils.config import *
 from utils.logger import setup_logger
 from utils.mongo_client import get_collection
 from utils.redis_client import get_redis

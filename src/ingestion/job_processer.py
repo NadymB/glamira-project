@@ -2,7 +2,7 @@ import random
 import json
 import time
 import asyncio
-from config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES
+from utils.config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES
 from fetcher import fetch
 from utils.queue_core import brpoplpush, lpush
 

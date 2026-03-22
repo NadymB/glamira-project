@@ -3,20 +3,20 @@ version: "3.9"
 services:
   producer:
     build: .
-    command: python etl/extract_data.py
+    command: python3 etl/extract_data.py
     env_file:
       - .env
 
   worker:
     build: .
-    command: python src/ingestion/worker.py
+    command: python3 src/ingestion/worker.py
     env_file:
       - .env
     restart: always
 
   consumer:
     build: .
-    command: python etl/load_data.py
+    command: python3 etl/load_data.py
     env_file:
       - .env
     restart: always
