@@ -1,0 +1,33 @@
+version: "3.9"
+
+services:
+  redis:
+    image: redis:7
+    ports:
+      - "6379:6379"
+
+  producer:
+    build: .
+    command: python src/extract/mongo_extract.py
+    env_file:
+      - .env
+    depends_on:
+      - redis
+
+  worker:
+    build: .
+    command: python src/ingestion/worker.py
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: always
+
+  consumer:
+    build: .
+    command: python src/load/consumer.py
+    env_file:
+      - .env
+    depends_on:
+      - redis
+    restart: always

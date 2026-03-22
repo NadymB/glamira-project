@@ -1,25 +1,42 @@
+import os
+from dotenv import load_dotenv
 from urllib.parse import quote_plus
-from pymongo import MongoClient
 
-username = "admin"
-password = quote_plus("your_password")
+load_dotenv()
 
-REDIS_HOST = "localhost"
-REDIS_PORT = 6379
-REDIS_PASSWORD = "your_strong_password"
+# REDIS
+REDIS_HOST = os.getenv("REDIS_HOST")
+REDIS_PORT = int(os.getenv("REDIS_PORT", 6379))
+REDIS_PASSWORD = os.getenv("REDIS_PASSWORD")
 
-MONGO_URI = f"mongodb://{username}:{password}@localhost:27017/?authSource=admin"
-DB_NAME = "glamira"
-COLLECTION_NAME = "summary"
+# MONGO
+MONGO_USERNAME = os.getenv("MONGO_USERNAME")
+MONGO_PASSWORD = quote_plus(os.getenv("MONGO_PASSWORD"))
+MONGO_HOST = os.getenv("MONGO_HOST")
+MONGO_PORT = os.getenv("MONGO_PORT")
 
-CRAWL_QUEUE = "crawl_queue"
-PROCESSING_QUEUE = "processing_queue"
-RESULT_FAILED_QUEUE = "result_failed_queue"
-RESULT_SUCCESS_QUEUE = "result_success_queue"
+MONGO_URI = f"mongodb://{MONGO_USERNAME}:{MONGO_PASSWORD}@{MONGO_HOST}:{MONGO_PORT}/?authSource=admin"
 
-CONCURRENCY = 3
-MAX_RETRIES = 3
-BATCH_SIZE = 50
+DB_NAME = os.getenv("MONGO_DB")
+COLLECTION_NAME = os.getenv("MONGO_COLLECTION")
 
-CONCURRENT=5
-TIMEOUT=10
+# QUEUE
+CRAWL_QUEUE = os.getenv("CRAWL_QUEUE")
+PROCESSING_QUEUE = os.getenv("PROCESSING_QUEUE")
+RESULT_FAILED_QUEUE = os.getenv("RESULT_FAILED_QUEUE")
+RESULT_SUCCESS_QUEUE = os.getenv("RESULT_SUCCESS_QUEUE")
+RESULT_BLOCKED_QUEUE = os.getenv("RESULT_BLOCKED_QUEUE")
+UPLOAD_PROCESSING_QUEUE = os.getenv("UPLOAD_PROCESSING_QUEUE")
+
+# WORKER
+CONCURRENCY = int(os.getenv("CONCURRENCY", 20))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", 2))
+TIMEOUT = int(os.getenv("TIMEOUT", 10))
+BATCH_SIZE = int(os.getenv("BATCH_SIZE", 1000))
+SLEEP_EMPTY = int(os.getenv("SLEEP_EMPTY", 1))
+
+# CHECKPOINT
+CHECKPOINT_PREFIX = os.getenv("CHECKPOINT_PREFIX")
+CHECKPOINT_HASH = os.getenv("CHECKPOINT_HASH")
+PROCESSING_TS = os.getenv("PROCESSING_TS")
+PROCESSING_TIMEOUT = int(os.getenv("PROCESSING_TIMEOUT", 300))
