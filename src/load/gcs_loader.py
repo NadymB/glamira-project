@@ -1,7 +1,7 @@
 import uuid 
 import time 
 from google.cloud import storage
-from config import *
+from utils.config import *
 from utils.logger import setup_logger
 
 logger = setup_logger("gcs_loader")

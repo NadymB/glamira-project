@@ -1,7 +1,7 @@
 import random
 import aiohttp
 from lxml import html
-from config import MAX_RETRIES, USER_AGENTS
+from utils.config import MAX_RETRIES, USER_AGENTS
 
 async def fetch(session, url):
     for attempt in range(MAX_RETRIES):
