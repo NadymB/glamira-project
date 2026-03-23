@@ -2,7 +2,7 @@ import random
 import json
 import time
 import asyncio
-from src.utils.config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES
+from src.utils.config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES, RESULT_PARSE_ERROR_QUEUE
 from src.ingestion.fetcher import fetch
 
 async def process_job(session, r, logger):
@@ -30,9 +30,10 @@ async def process_job(session, r, logger):
         target_queue = RESULT_FAILED_QUEUE
     elif status == "blocked":
         target_queue = RESULT_BLOCKED_QUEUE
-    else:
+    elif status == "success":
         target_queue = RESULT_SUCCESS_QUEUE
-
+    else: 
+        target_queue = RESULT_PARSE_ERROR_QUEUE
     # push result với retry
     for attempt in range(MAX_RETRIES):
         try:
