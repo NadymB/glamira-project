@@ -12,7 +12,7 @@ bucket = storage_client.bucket("glamira-data-lake")
 def upload_batch(batch):
     file_name = f"bronze/crawl_{uuid.uuid4()}.jsonl"
 
-    data = "\n".join(batch)
+    data = "\n".join([x.decode() for x in batch])
 
     for attempt in range(MAX_RETRIES):
         try:

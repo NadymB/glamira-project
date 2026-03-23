@@ -41,6 +41,10 @@ services:
   consumer:
     build: .
     command: python3 etl/load_data.py
+    environment:
+    - GOOGLE_APPLICATION_CREDENTIALS=/app/key.json
+    volumes:
+      - /home/dantrinh2792001/key.json:/app/key.json
     env_file:
       - .env
     restart: always

@@ -22,7 +22,7 @@ async def worker_loop(session, r):
 
 async def recover_loop(r):
     while True:
-        await recover_stuck_jobs(r)
+        await recover_stuck_jobs(r, logger)
         await asyncio.sleep(60)
 
 async def handle_retry(r, data):
@@ -72,7 +72,7 @@ async def worker():
         ]
 
         tasks.append(asyncio.create_task(recover_loop(r)))
-        tasks.append(asyncio.create_task(recover_stuck_jobs(r)))
+        tasks.append(asyncio.create_task(retry_blocked_loop(r)))
 
         await asyncio.gather(*tasks, return_exceptions=True)
 

@@ -30,7 +30,7 @@ def run():
         item = pop_safe(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE)
 
         if item:
-            batch.append(item.decode())
+            batch.append(item)
 
         if len(batch) >= BATCH_SIZE:
             success = upload_batch(batch)
