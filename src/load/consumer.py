@@ -12,7 +12,7 @@ logger = setup_logger("upload_consumer")
 async def run():
     logger.info("🚀 Upload consumer start")
     r = get_redis()
-    recover_on_start(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, logger)
+    await recover_on_start(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, logger)
 
     batch = []
     total = 0
@@ -41,7 +41,7 @@ async def run():
                     total += len(batch)
                 batch.clear()
 
-            await time.sleep(SLEEP_EMPTY)
+            await asyncio.sleep(SLEEP_EMPTY)
 
 if __name__ == "__main__":
     asyncio.run(run())
