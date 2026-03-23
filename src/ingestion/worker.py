@@ -6,7 +6,7 @@ import time
 from src.utils.logger import setup_logger
 from aiohttp import ClientTimeout
 from src.ingestion.job_processer import process_job
-from src.utils.redis_client import get_redis
+from src.utils.redis_client import get_redis_async
 from src.ingestion.recover import recover_stuck_jobs
 
 logger = setup_logger("worker")
@@ -23,7 +23,7 @@ async def worker_loop(session, r):
 # 🚀 Main worker
 # =========================
 async def worker():
-    r = get_redis()
+    r = get_redis_async()
     connector = aiohttp.TCPConnector(
         limit=0,               # unlimited connections
         limit_per_host=20,     # tránh spam 1 domain

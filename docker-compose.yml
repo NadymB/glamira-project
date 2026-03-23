@@ -11,25 +11,25 @@ services:
     env_file:
       - .env
 
-  producer-2:
-    build: .
-    command: >
-      python3 etl/extract_data.py
-      --producer_id 2
-      --start_id 5ea02a0e0000000000000000 
-      --end_id 5ebc7a9d0000000000000000
-    env_file:
-      - .env
+  # producer-2:
+  #   build: .
+  #   command: >
+  #     python3 etl/extract_data.py
+  #     --producer_id 2
+  #     --start_id 5ea02a0e0000000000000000 
+  #     --end_id 5ebc7a9d0000000000000000
+  #   env_file:
+  #     - .env
 
-  producer-3:
-    build: .
-    command: >
-      python3 etl/extract_data.py
-      --producer_id 3
-      --start_id 5ebc7a9d0000000000000000 
-      --end_id 5ed8cb2c0000000000000000
-    env_file:
-      - .env
+  # producer-3:
+  #   build: .
+  #   command: >
+  #     python3 etl/extract_data.py
+  #     --producer_id 3
+  #     --start_id 5ebc7a9d0000000000000000 
+  #     --end_id 5ed8cb2c0000000000000000
+  #   env_file:
+  #     - .env
 
   worker:
     build: .

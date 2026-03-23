@@ -1,9 +1,7 @@
-from src.utils.redis_client import get_redis
 from src.utils.config import CHECKPOINT_PREFIX
 from bson.objectid import ObjectId
 
-r = get_redis()
-def get_checkpoint(producer_id):
+def get_checkpoint(r, producer_id):
     key = f"{CHECKPOINT_PREFIX}:{producer_id}"
     cp = r.get(key)
     if cp:
@@ -14,6 +12,6 @@ def get_checkpoint(producer_id):
     return None
 
 
-def save_checkpoint(producer_id, _id):
+def save_checkpoint(r, producer_id, _id):
     key = f"{CHECKPOINT_PREFIX}:{producer_id}"
     r.set(key, str(_id))

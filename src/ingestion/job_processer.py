@@ -4,10 +4,9 @@ import time
 import asyncio
 from src.utils.config import CRAWL_QUEUE, PROCESSING_QUEUE, PROCESSING_TS, RESULT_FAILED_QUEUE, RESULT_SUCCESS_QUEUE, RESULT_BLOCKED_QUEUE, CHECKPOINT_HASH, MAX_RETRIES
 from src.ingestion.fetcher import fetch
-from src.utils.queue_core import pop_and_move_job, push_to_queue
 
 async def process_job(session, r, logger):
-    data = await pop_and_move_job(r, CRAWL_QUEUE, PROCESSING_QUEUE)
+    data = await r.brpoplpush(CRAWL_QUEUE, PROCESSING_QUEUE, timeout=5)
     if not data:
         return
 
@@ -37,7 +36,7 @@ async def process_job(session, r, logger):
     # push result với retry
     for attempt in range(MAX_RETRIES):
         try:
-            await push_to_queue(r, target_queue, json.dumps(result))
+            await r.lpush(target_queue, json.dumps(result))
             break
         except Exception:
             await asyncio.sleep(2)

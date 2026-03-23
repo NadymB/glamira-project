@@ -1,5 +1,5 @@
-async def recover_on_start(r, source_queue , processing_queue, logger):
-    stuck = await r.lrange(processing_queue, 0, -1)
+def recover_on_start(r, source_queue , processing_queue, logger):
+    stuck = r.lrange(processing_queue, 0, -1)
 
     if stuck:
         logger.warning(f"♻️ Recover {len(stuck)} items")

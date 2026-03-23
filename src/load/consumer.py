@@ -1,24 +1,23 @@
 import time
-import asyncio
 from src.utils.config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, SLEEP_EMPTY
 from src.utils.logger import setup_logger
-from src.utils.redis_client import get_redis
+from src.utils.redis_client import get_redis_sync
 from src.load.recover import recover_on_start
-from src.utils.queue_core import pop_and_move_job, remove_processed_jobs
+from src.load.queue_ops import pop_safe, remove_processed_jobs
 from src.load.gcs_loader import upload_batch 
 
 logger = setup_logger("upload_consumer")
 
-async def run():
+def run():
     logger.info("🚀 Upload consumer start")
-    r = get_redis()
-    await recover_on_start(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, logger)
+    r = get_redis_sync()
+    recover_on_start(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, logger)
 
     batch = []
     total = 0
 
     while True:
-        item = await pop_and_move_job(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE)
+        item = pop_safe(r, RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE)
 
         if item:
             batch.append(item)
@@ -41,7 +40,7 @@ async def run():
                     total += len(batch)
                 batch.clear()
 
-            await asyncio.sleep(SLEEP_EMPTY)
+            time.sleep(SLEEP_EMPTY)
 
 if __name__ == "__main__":
-    asyncio.run(run())
+    run()

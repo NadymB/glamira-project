@@ -1,10 +1,7 @@
 import json
-from src.utils.redis_client import get_redis
 from src.utils.config import CRAWL_QUEUE
 
-r = get_redis()
-
-def push_batch(batch):
+def push_batch(r, batch):
     if not batch:
         return
     r.lpush(CRAWL_QUEUE, *batch)
