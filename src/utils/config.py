@@ -40,5 +40,3 @@ CHECKPOINT_PREFIX = os.getenv("CHECKPOINT_PREFIX")
 CHECKPOINT_HASH = os.getenv("CHECKPOINT_HASH")
 PROCESSING_TS = os.getenv("PROCESSING_TS")
 PROCESSING_TIMEOUT = int(os.getenv("PROCESSING_TIMEOUT", 300))
-
-USER_AGENTS = [ "Mozilla/5.0 (Windows NT 10.0; Win64; x64)", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)", ]

@@ -1,17 +1,14 @@
 import random
 import asyncio
 from lxml import html
-from src.utils.config import MAX_RETRIES, USER_AGENTS
+from src.utils.config import MAX_RETRIES
+from src.utils.constants import XPATHS
 
 async def fetch(session, url):
     for attempt in range(MAX_RETRIES):
         try:
-            headers = {
-                "User-Agent": random.choice(USER_AGENTS),
-                "Accept-Language": "en-US,en;q=0.9",
-            }
 
-            async with session.get(url, headers=headers) as resp:
+            async with session.get(url) as resp:
 
                 # ❌ chỉ 404 mới là failed
                 if resp.status == 404:
@@ -23,23 +20,29 @@ async def fetch(session, url):
 
                 # 🚫 block
                 if resp.status in (403, 429):
-                    return {
-                        "url": url,
-                        "product_name": None,
-                        "status": "blocked"
-                    }
+                    await asyncio.sleep(random.uniform(3, 10))  # cooldown
+                    continue
 
                 text = await resp.text()
 
                 tree = html.fromstring(text)
-                name = tree.xpath('//*[@data-ui-id="page-title-wrapper"]/text()')
+
+                 # 🔥 tìm product name với fallback
+                name = []
+                for xp in XPATHS:
+                    name = tree.xpath(xp)
+                    if name:
+                        break
+
+                # clean text
+                name = [n.strip() for n in name if isinstance(n, str) and n.strip()]
 
                 # 🚫 không parse được → block
                 if not name:
                     return {
                         "url": url,
                         "product_name": None,
-                        "status": "blocked"
+                        "status": "parse_error"
                     }
 
                 # ✅ success
