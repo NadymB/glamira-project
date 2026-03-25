@@ -9,6 +9,5 @@ def push_batch(r, batch):
 
 def build_message(doc):
     return json.dumps({
-        "product_id": str(doc["_id"]),
-        "url": doc["url"]
+        "product_id": str(doc["_id"])
     })

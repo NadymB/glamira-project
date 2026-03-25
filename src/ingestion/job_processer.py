@@ -13,14 +13,13 @@ async def process_job(session, r, logger):
     await r.hset(PROCESSING_TS, data, int(time.time()))
 
     item = json.loads(data.decode())
-    url = item["url"]
     product_id = item.get("product_id")
 
     # log nhẹ (1%)
     if random.random() < 0.01:
-        logger.info(f"Processing: {url}")
+        logger.info(f"Processing: {product_id}")
 
-    result = await fetch(session, url)
+    result = await fetch(session, product_id)
     result["product_id"] = product_id
 
     status = result.get("status")
@@ -43,6 +42,6 @@ async def process_job(session, r, logger):
             await asyncio.sleep(2)
 
     # cleanup
-    await r.hset(CHECKPOINT_HASH, url, json.dumps(result))
+    await r.hset(CHECKPOINT_HASH, product_id, json.dumps(result))
     await r.lrem(PROCESSING_QUEUE, 1, data)
     await r.hdel(PROCESSING_TS, data)
