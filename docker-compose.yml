@@ -1,35 +1,15 @@
 version: "3.9"
 
 services:
-  producer-1:
+  producer:
     build: .
     command: >
       python3 etl/extract_data.py
       --producer_id 1 
-      --start_id 5e83d9800000000000000000 
-      --end_id 5ea02a0e0000000000000000
+      --start_id 5e83d98084f6c5377e331ace 
+      --end_id 5ed8cb2cfeae1f377811165c
     env_file:
       - .env
-
-  # producer-2:
-  #   build: .
-  #   command: >
-  #     python3 etl/extract_data.py
-  #     --producer_id 2
-  #     --start_id 5ea02a0e0000000000000000 
-  #     --end_id 5ebc7a9d0000000000000000
-  #   env_file:
-  #     - .env
-
-  # producer-3:
-  #   build: .
-  #   command: >
-  #     python3 etl/extract_data.py
-  #     --producer_id 3
-  #     --start_id 5ebc7a9d0000000000000000 
-  #     --end_id 5ed8cb2c0000000000000000
-  #   env_file:
-  #     - .env
 
   worker:
     build: .
