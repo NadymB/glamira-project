@@ -1,30 +1,20 @@
-def build_pipeline(start_id, end_id, col_values):
+def build_pipeline(start_id, end_id):
     return [
         {
             "$match": {
-                "_id": {"$gte": start_id, "$lt": end_id},
-                "collection": {
-                    "$in": col_values
-                }
+                "time_stamp": {"$gte": start_id, "$lt": end_id},
+                "product_id": {"$ne": None, "$ne": ""}
             }
         },
         {
-            "$project": {
-                "_id": 1,
-                "product_id": "$viewing_product_id",
-                "url": "$referrer_url"
-            }
-        },
-        {
-            "$match": {
-                "product_id": {"$ne": None},
-                "url": {"$ne": None}
+            "$sort": {
+                "product_id": 1,
+                "_id": -1
             }
         },
         {
             "$group": {
                 "_id": "$product_id",
-                "url": {"$first": "$url"},
                 "last_doc_id": {"$max": "$_id"}
             }
         }

@@ -29,7 +29,6 @@ async def handle_retry(r, data):
     await asyncio.sleep(60)
 
     await r.lpush("crawl_queue", json.dumps({
-        "url": data["url"],
         "product_id": data.get("product_id")
     }))
 
@@ -53,7 +52,7 @@ async def retry_blocked_loop(r):
 async def worker():
     r = get_redis_async()
     connector = aiohttp.TCPConnector(
-        limit=0,               # unlimited connections
+        limit=CONCURRENCY,               # unlimited connections
         limit_per_host=20,     # tránh spam 1 domain
         ttl_dns_cache=300,
         ssl=False

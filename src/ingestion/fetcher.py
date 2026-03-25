@@ -1,10 +1,26 @@
 import random
 import asyncio
+import re 
+import json
 from lxml import html
 from src.utils.config import MAX_RETRIES
 from src.utils.constants import XPATHS
 
-async def fetch(session, url):
+def extract_react_data(text):
+    match = re.search(r'var\s+react_data\s*=\s*(\{.*?\});', text, re.DOTALL)
+    if not match:
+        return None
+    
+    json_str = match.group(1)
+    
+    try:
+        return json.loads(json_str)
+    except Exception:
+        return None
+
+async def fetch(session, product_id):
+    url = f"https://www.glamira.com/catalog/product/view/id/{product_id}"
+
     for attempt in range(MAX_RETRIES):
         try:
 
@@ -13,8 +29,7 @@ async def fetch(session, url):
                 # ❌ chỉ 404 mới là failed
                 if resp.status == 404:
                     return {
-                        "url": url,
-                        "product_name": None,
+                        "product_id": product_id,
                         "status": "failed"
                     }
 
@@ -25,39 +40,33 @@ async def fetch(session, url):
 
                 text = await resp.text()
 
-                tree = html.fromstring(text)
+                # 🔥 ưu tiên lấy từ script
+                react_data = extract_react_data(text)
+                price = react_data.get("price")
+                price = float(price) if price else None
 
-                 # 🔥 tìm product name với fallback
-                name = []
-                for xp in XPATHS:
-                    name = tree.xpath(xp)
-                    if name:
-                        break
-
-                # clean text
-                name = [n.strip() for n in name if isinstance(n, str) and n.strip()]
-
-                # 🚫 không parse được → block
-                if not name:
+                if react_data:
                     return {
-                        "url": url,
-                        "product_name": None,
-                        "status": "parse_error"
+                        "product_id": product_id,
+                        "product_name": react_data.get("name"),
+                        "price": price,
+                        "sku": react_data.get("sku"),
+                        "product_type": react_data.get("product_type"),
+                        "category_name": react_data.get("category_name"),
+                        "status": "success"
                     }
-
-                # ✅ success
-                return {
-                    "url": url,
-                    "product_name": name[0].strip(),
-                    "status": "success"
-                }
-
+                else:
+                    print("⚠️  react_data not found")
+                    return {
+                        "product_id": product_id,
+                        "product_name": None,
+                        "status": "not_found"                             
+                    }
         except Exception:
             await asyncio.sleep(2 ** attempt)
 
     # 🚫 retry hết → coi như blocked (thường do network / anti-bot)
     return {
-        "url": url,
-        "product_name": None,
+        "product_id": product_id,
         "status": "blocked"
     }

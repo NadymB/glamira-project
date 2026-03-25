@@ -22,14 +22,7 @@ def extract(producer_id, start_id, end_id):
         logger.info(f"🔁 Resume from checkpoint: {last_id}")
         start_id = last_id
     
-    pipeline = build_pipeline(start_id, end_id, [
-        "view_product_detail",
-        "select_product_option",
-        "add_to_cart_action",
-        "select_product_option_quality",
-        "product_detail_recommendation_visible",
-        "product_detail_recommendation_noticed"
-    ])
+    pipeline = build_pipeline(start_id, end_id)
 
     start_time = time.time()
     cursor = collection.aggregate(pipeline, allowDiskUse=True)
