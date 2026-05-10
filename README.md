@@ -22,7 +22,7 @@ The platform processes more than 41 million MongoDB event records and transforms
 
 The platform follows a modern Medallion-style architecture:
 <p align="center">
-  <img src="glamira-architecture.svg" alt="Async Crawled Workflow Diagram">
+  <img src="assets/images/glamira-architecture.svg" alt="Async Crawled Workflow Diagram">
 </p>
 
 ## Data Modeling
