@@ -1,5 +1,5 @@
 import time
-from src.utils.config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, SLEEP_EMPTY, CRAWL_QUEUE, PROCESSING_QUEUE
+from src.utils.config import RESULT_SUCCESS_QUEUE, UPLOAD_PROCESSING_QUEUE, BATCH_SIZE, CRAWL_QUEUE, PROCESSING_QUEUE
 from src.utils.logger import setup_logger
 from src.utils.redis_client import get_redis_sync
 from src.load.recover import recover_on_start
@@ -56,8 +56,6 @@ def run():
                 logger.info("😴 System idle... waiting for new data")
             time.sleep(5)
             continue
-
-            time.sleep(SLEEP_EMPTY)
 
 if __name__ == "__main__":
     run()

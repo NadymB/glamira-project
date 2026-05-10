@@ -1,10 +1,15 @@
+import os
 import IP2Location
 from src.utils.mongo_client import get_collection, get_db
 
 db = get_db()
 collection = get_collection()
 
-ipdb = IP2Location.IP2Location("IP-COUNTRY-REGION-CITY.BIN")
+HOME = os.path.expanduser("~")
+
+db_path = os.path.join(HOME, "IP-COUNTRY-REGION-CITY.BIN")
+
+ipdb = IP2Location.IP2Location(db_path)
 
 pipeline = [
     {"$group": {"_id": "$ip"}}
@@ -15,7 +20,7 @@ cursor = collection.aggregate(pipeline, allowDiskUse=True)
 results = []
 
 for doc in cursor:
-    ip = doc["_id"]
+    ip = doc["ip"]
 
     try:
         record = ipdb.get_all(ip)

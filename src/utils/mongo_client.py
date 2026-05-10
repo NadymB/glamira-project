@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from src.utils.config import MONGO_URI, DB_NAME, COLLECTION_NAME
+from src.utils.config import MONGO_URI, DB_NAME, COLLECTION_NAME, IP_LOCATION_NAME
 
 _client = None
 
@@ -16,3 +16,6 @@ def get_db():
 
 def get_collection():
     return get_db()[COLLECTION_NAME]
+
+def get_ip_location():
+    return get_db()[IP_LOCATION_NAME]
